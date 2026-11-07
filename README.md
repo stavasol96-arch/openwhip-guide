@@ -1,9 +1,7 @@
 # ⚡ Simulator Pecut AI (Safe Simulation Mode)
 
 > **Murni Efek Visual & Audio Cambukan Realistis — 100% Tanpa Macro / Injeksi Teks ke Terminal!**  
-> *Dibuat dengan REA.*
 
-![OpenWhip Icon](icon/Template.png)
 
 ---
 
