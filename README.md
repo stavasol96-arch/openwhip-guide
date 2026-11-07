@@ -1,120 +1,104 @@
-# How to Install OpenWhip
+# ⚡ Simulator Pecut AI (Safe Simulation Mode)
 
-My guide to setting up **OpenWhip** — a joke desktop app that puts a whip overlay on your screen and "whips" Claude Code to go faster.
+> **Murni Efek Visual & Audio Cambukan Realistis — 100% Tanpa Macro / Injeksi Teks ke Terminal!**  
+> *Dibuat dengan REA.*
 
-Everything you need is below: install steps, the macOS permission that trips everyone up, and what the app actually does before you point it at your terminal.
-
----
-
-## What it actually does
-
-Click the whip and it fires a keyboard macro into **whatever window is focused**:
-
-1. Sends **Ctrl+C** — in Claude Code, this interrupts the running task
-2. Types a random phrase — `FASTER`, `Faster CLANKER`, `Speed it up clanker`
-3. Presses **Enter**
-
-That's the whole trick. It's a gag, and a good one.
-
-**It does not make Claude faster, and it does not help with session limits.** Interrupting a task mid-run and re-prompting usually costs *more* tokens, because finished work gets thrown away and redone.
+![OpenWhip Icon](icon/Template.png)
 
 ---
 
-## Requirements
+## 🎯 Mengapa Versi Ini Dibuat?
 
-- macOS, Windows, or Linux
-- [Node.js](https://nodejs.org) 18 or newer
+Versi upstream asli dari OpenWhip memiliki fungsi macro yang menembakkan:
+1. Keystroke `Ctrl+C` ke jendela yang sedang aktif.
+2. Mengetikkan teks secara otomatis (`FASTER`, `Faster CLANKER`, `Speed it up clanker`).
+3. Menekan `Enter`.
 
-Check what you have:
+Jika Anda sedang menjalankan AI coding agent (seperti Claude Code, Hermes Agent, Aider, atau sesi terminal lainnya), injeksi teks tersebut **merusak tugas yang sedang diproses, membuang token yang sudah selesai, dan mengganggu pekerjaan Anda**.
+
+**Versi Simulator Pecut AI ini memecahkan masalah tersebut:**
+- ✅ **100% Efek Visual Asli:** Fisika rantai 28 segmen Verlet, kurva spline Catmull-Rom & Bézier, halo putih, dan gerak momentum.
+- ✅ **100% Audio Asli:** 5 sampel audio lecutan cambuk asli (`sounds/A.mp3` - `sounds/E.mp3`) + Web Audio Synthesizer fallback.
+- ✅ **100% Ikon Asli:** Menggunakan aset ikon bawaan (`icon/Template.png`, `icon.ico`, `AppIcon.icns`).
+- 🛡️ **0% Injeksi Teks / Keyboard:** Seluruh kode `xdotool`, `osascript`, `keybd_event`, dan `koffi` telah dibersihkan total!
+- 🌐 **Dua Cara Menjalankan:** Bisa dimainkan langsung di Web Browser (`index.html` / `server.js`) atau sebagai aplikasi desktop overlay (Electron).
+
+---
+
+## 🚀 Cara Menjalankan
+
+### Cara 1: Mode Web Simulator (Paling Ringan & Instan)
+Tanpa perlu menginstal Electron (~100MB), Anda bisa langsung membuka simulator di browser mana saja:
 
 ```bash
-node --version
+# Jalankan server lokal zero-dependency
+npm run web
+# atau:
+node server.js
 ```
 
-If that errors, install Node first. On macOS with [Homebrew](https://brew.sh):
+Lalu buka di browser Anda: **[http://localhost:3300](http://localhost:3300)**
+
+*Fitur Web Simulator:*
+- Tampilan HUD modern dengan penghitung total pecutan (*crack counter*).
+- Live speedometer kecepatan ujung cambuk.
+- Slider pengatur sensitivitas letupan (ambang kecepatan).
+- Tombol Mute / Unmute suara & Reset cambuk.
+- Partikel percikan api (*visual sparks*) saat cambuk meletup.
+
+---
+
+### Cara 2: Mode Desktop Overlay (Electron App)
+Menjalankan cambuk transparan langsung di layar desktop Anda:
 
 ```bash
-brew install node
+# 1. Install dependencies (hanya butuh Electron)
+npm install
+
+# 2. Jalankan aplikasi
+npm start
 ```
 
+> **Catatan Kompatibilitas:** Repo ini sudah dilengkapi script otomatis `scripts/ensure-electron.js` yang otomatis memperbaiki biner Electron jika ekstraksi terhambat (misalnya pada versi Node.js v26+ yang baru).
+
+*Ikon cambuk akan muncul di System Tray:*
+- **Klik ikon tray:** Memunculkan pecutan di layar (overlay transparan).
+- **Gerakkan kursor cepat (flick):** Meletupkan cambuk dengan suara & efek visual.
+- **Klik kiri di mana saja:** Menjatuhkan cambuk ke bawah layar (*drop gravity*).
+- **Klik kanan tray:** Menu context untuk menyembunyikan overlay atau keluar (*Quit*).
+
 ---
 
-## Install
+## 📂 Struktur Repositori
 
-```bash
-npm install -g openwhip
-openwhip
 ```
-
-The first command pulls in Electron (~100MB), so give it a minute. The second launches the app and returns immediately to an empty prompt — that's normal, it detaches to the background.
-
-Look for the whip icon in your **menu bar** (macOS, top right) or **system tray** (Windows/Linux).
-
----
-
-## Grant Accessibility permission (macOS)
-
-The macro types keystrokes, which macOS blocks by default.
-
-The first time you click the whip, macOS prompts for permission. Approve it, or set it manually:
-
-**System Settings → Privacy & Security → Accessibility** → enable the toggle for the app.
-
-Without this the animation still plays but nothing gets typed — the most common "it's not working" case.
-
-On Linux you need `xdotool`:
-
-```bash
-sudo apt install xdotool
-```
-
----
-
-## Usage
-
-1. Click the tray icon → the whip overlay appears
-2. Click the whip → the macro fires
-3. Click the tray icon again to dismiss
-
----
-
-## Two things to know before you use it
-
-**It types into whatever window has focus.** The app tries to restore your previous window with a Cmd+Tab before firing, on a fixed timer. If focus lands somewhere else — Slack, an email draft, a terminal sitting at a `sudo` prompt — that's where `Faster CLANKER` gets typed, followed by Enter. Keep your Claude Code terminal focused when you click.
-
-**It interrupts.** The macro leads with Ctrl+C. Clicking it during a task you care about kills that task.
-
----
-
-## Uninstall
-
-```bash
-npm uninstall -g openwhip
-```
-
-Then revoke the Accessibility permission in System Settings → Privacy & Security → Accessibility.
-
----
-
-## Is it safe?
-
-I read the source of `openwhip@1.1.0` before installing. No network calls, no telemetry, no file access beyond its own icons, no obfuscation. It does what it advertises.
-
-Two caveats worth stating plainly:
-
-- It needs **Accessibility permission**, which lets it synthesize keystrokes system-wide — not just in your terminal.
-- It's published by a pseudonymous maintainer. My read covers version 1.1.0 only; I can't vouch for future versions.
-
-Read it yourself before trusting a stranger's summary — including mine:
-
-```bash
-npm pack openwhip && tar xzf openwhip-*.tgz && cat package/main.js
+.
+├── icon/
+│   ├── AppIcon.icns      # Ikon macOS
+│   ├── icon.ico          # Ikon Windows
+│   └── Template.png      # Ikon template RGBA 512x512
+├── sounds/
+│   ├── A.mp3             # Sampel suara cambuk 1
+│   ├── B.mp3             # Sampel suara cambuk 2
+│   ├── C.mp3             # Sampel suara cambuk 3
+│   ├── D.mp3             # Sampel suara cambuk 4
+│   └── E.mp3             # Sampel suara cambuk 5
+├── scripts/
+│   ├── ensure-electron.js # Helper verifikasi & perbaikan biner Electron
+│   └── start-electron.js  # Runner Electron dengan deteksi display
+├── index.html            # Web Simulator interaktif lengkap dengan HUD & kontrol
+├── overlay.html          # Canvas desktop overlay untuk Electron
+├── main.js               # Electron main process (Aman, tanpa xdotool / macro)
+├── preload.js            # Secure IPC bridge
+├── server.js             # Server HTTP Node.js zero-dependency untuk mode web
+├── package.json          # Manifest project (tanpa koffi / native build)
+└── README.md             # Dokumentasi utama proyek
 ```
 
 ---
 
-## Credits
+## 📜 Lisensi & Atribusi
 
-OpenWhip is by **[GitFrog1111](https://github.com/GitFrog1111/OpenWhip)** — MIT licensed.
-
-This repo is the guide, not the app — install it from npm with the steps above.
+- Dilisensikan di bawah lisensi [MIT](LICENSE).
+- Konsep dasar & aset asli terinspirasi dari proyek OpenWhip oleh [GitFrog1111](https://github.com/GitFrog1111/OpenWhip).
+- Rekonstruksi & implementasi safe simulator oleh [Ebil-bot](https://github.com/Ebil-bot) (Dibuat dengan REA).

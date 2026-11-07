@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulator Pecut AI (Safe Simulation Mode)</title>
+  <link rel="icon" type="image/png" href="icon/Template.png">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: rgba(22, 27, 34, 0.85);
+      --card-border: rgba(240, 246, 252, 0.1);
+      --text: #f0f6fc;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-glow: rgba(88, 166, 255, 0.4);
+      --warning: #f0883e;
+      --success: #3fb950;
+      --danger: #f85149;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 50%, #161b22 0%, #0d1117 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+    }
+
+    #c {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      cursor: crosshair;
+    }
+
+    /* HUD Interface Overlay */
+    .hud {
+      position: absolute;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .interactive {
+      pointer-events: auto;
+    }
+
+    .hud-top-left {
+      top: 20px;
+      left: 20px;
+      max-width: 360px;
+    }
+
+    .hud-top-right {
+      top: 20px;
+      right: 20px;
+      max-width: 320px;
+    }
+
+    .hud-bottom-center {
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .app-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 4px;
+      object-fit: contain;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+    }
+
+    .title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+
+    .badge-safe {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--success);
+      background: rgba(63, 185, 80, 0.15);
+      border: 1px solid rgba(63, 185, 80, 0.3);
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 4px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .stat-box {
+      background: rgba(13, 17, 23, 0.6);
+      border: 1px solid rgba(240, 246, 252, 0.08);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .speed-bar-container {
+      margin-top: 10px;
+    }
+
+    .speed-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .speed-bar-track {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .speed-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #388bfd, #f0883e, #f85149);
+      transition: width 0.05s ease-out;
+    }
+
+    .threshold-marker {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 2px;
+      background: #ffffff;
+      box-shadow: 0 0 4px #ffffff;
+    }
+
+    /* Controls */
+    .controls-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid rgba(240, 246, 252, 0.15);
+      background: #21262d;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: #30363d;
+      border-color: #8b949e;
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: #238636;
+      border-color: rgba(240, 246, 252, 0.1);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #2ea043;
+    }
+
+    .slider-group {
+      margin-top: 12px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* Info Card */
+    .info-card {
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: #c9d1d9;
+    }
+
+    .info-card h4 {
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .info-card ul {
+      padding-left: 18px;
+      margin-top: 6px;
+    }
+
+    .info-card li {
+      margin-bottom: 4px;
+    }
+
+    .instruction-pill {
+      background: rgba(13, 17, 23, 0.75);
+      border: 1px solid rgba(240, 246, 252, 0.15);
+      backdrop-filter: blur(8px);
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      color: #ffffff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flash-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.12s ease-out;
+    }
+
+    @media (max-width: 768px) {
+      .hud-top-right {
+        display: none;
+      }
+      .hud-top-left {
+        width: calc(100% - 40px);
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="flash" class="flash-overlay"></div>
+
+<!-- Left HUD: Stats & Controls -->
+<div class="hud hud-top-left interactive">
+  <div class="card">
+    <div class="header-row">
+      <img src="icon/Template.png" alt="OpenWhip Icon" class="app-icon">
+      <div>
+        <div class="title">Simulator Pecut AI</div>
+        <div class="badge-safe">🛡️ Mode Simulasi Aman (Zero Macro)</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">Total Pecutan</div>
+        <div class="stat-value" id="stat-cracks">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Kecepatan Tip</div>
+        <div class="stat-value" id="stat-vel">0</div>
+      </div>
+    </div>
+
+    <div class="speed-bar-container">
+      <div class="speed-bar-label">
+        <span>Kecepatan Cambuk</span>
+        <span id="speed-label">0 / 340 px</span>
+      </div>
+      <div class="speed-bar-track">
+        <div class="threshold-marker" id="threshold-mark" style="left: 68%;"></div>
+        <div class="speed-bar-fill" id="speed-fill"></div>
+      </div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span>Sensitivitas Pecutan:</span>
+        <span id="crack-threshold-val">340 px/frame</span>
+      </div>
+      <input type="range" id="threshold-slider" min="150" max="600" value="340" step="10">
+    </div>
+
+    <div class="controls-row">
+      <button class="btn" id="btn-sound">🔊 Suara: ON</button>
+      <button class="btn" id="btn-spawn">⚡ Spawn / Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- Right HUD: Info -->
+<div class="hud hud-top-right interactive">
+  <div class="card info-card">
+    <h4>⚡ Simulator Pecut AI</h4>
+    <p>Dibuat dengan REA:</p>
+    <ul>
+      <li><strong>Fisika:</strong> 28 tautan rantai Verlet + kurva spline Catmull-Rom & Bézier.</li>
+      <li><strong>Suara:</strong> 5 sampel audio asli (<code>sounds/A-E.mp3</code>).</li>
+      <li><strong>Ikon:</strong> Template 512px RGBA & multi-platform icns/ico.</li>
+      <li><strong>Keamanan:</strong> 100% aman tanpa injeksi teks / macro ke jendela aktif.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Bottom Instruction Pill -->
+<div class="hud hud-bottom-center">
+  <div class="instruction-pill">
+    <span>💡</span>
+    <span><strong>Cara Pakai:</strong> Kibaskan kursor / jari dengan cepat (flick) untuk mencambuk! Klik untuk melepas (drop).</span>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+//  PHYSICS ENGINE & RENDERER (pecut-semua-ai)
+// ══════════════════════════════════════════════════════════════════════════════
+const P = {
+  segments: 28,
+  segmentLength: 25,
+  taper: 0.6,
+
+  // Physics
+  gravity: 1.2,
+  dropGravity: 0.95,
+  damping: 0.96,
+  constraintIters: 20,
+  maxStretchRatio: 1.2,
+
+  // Handle Aim
+  baseTargetAngle: -1.12,
+  handleAimByMouseX: 0.4,
+  handleAimByMouseY: 0.2,
+  handleAimClamp: 2.0,
+  handleSpring: 0.7,
+  handleAngularDamping: 0.078,
+  basePoseSegments: 2,
+  basePoseStiffStart: 0.9,
+  basePoseStiffEnd: 0.8,
+
+  // Bend limits
+  handleMaxBendDeg: 16,
+  tipMaxBendDeg: 120,
+  bendRigidityStart: 0.4,
+  bendRigidityEnd: 0.1,
+
+  // Wall collisions
+  wallBounce: 0.25,
+  wallFriction: 0.85,
+
+  // Crack detection
+  crackSpeed: 340,
+  crackCooldownMs: 200,
+  firstCrackGraceMs: 350,
+
+  // Visuals
+  lineWidthHandle: 7,
+  lineWidthTip: 5,
+  outlineWidth: 3,
+  handleExtraWidth: 5,
+  handleThickSegments: 2,
+  bgAlpha: 0.01,
+
+  arcWidth: 260,
+  arcHeight: 185
+};
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const flashEl = document.getElementById('flash');
+
+const statCracksEl = document.getElementById('stat-cracks');
+const statVelEl = document.getElementById('stat-vel');
+const speedLabelEl = document.getElementById('speed-label');
+const speedFillEl = document.getElementById('speed-fill');
+const thresholdMarkEl = document.getElementById('threshold-mark');
+const thresholdSlider = document.getElementById('threshold-slider');
+const crackThresholdVal = document.getElementById('crack-threshold-val');
+const btnSound = document.getElementById('btn-sound');
+const btnSpawn = document.getElementById('btn-spawn');
+
+let W = 0, H = 0;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+let mouseX = window.innerWidth / 2;
+let mouseY = window.innerHeight / 2;
+let prevMouseX = mouseX;
+let prevMouseY = mouseY;
+let whip = null;
+let dropping = false;
+let lastCrackTime = 0;
+let whipSpawnTime = 0;
+let handleAngle = P.baseTargetAngle;
+let handleAngVel = 0;
+let crackCount = 0;
+let soundEnabled = true;
+
+const sparks = [];
+
+// Audio elements with Web Audio fallback
+const WHIP_SOUND_FILES = [
+  'sounds/A.mp3',
+  'sounds/B.mp3',
+  'sounds/C.mp3',
+  'sounds/D.mp3',
+  'sounds/E.mp3'
+];
+const loadedAudios = [];
+WHIP_SOUND_FILES.forEach(src => {
+  const aud = new Audio(src);
+  aud.preload = 'auto';
+  loadedAudios.push(aud);
+});
+
+// Synthesized Web Audio fallback for 100% audio reliability
+let audioCtx = null;
+function getAudioContext() {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) audioCtx = new AudioContextClass();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+function playSynthesizedCrack() {
+  try {
+    const actx = getAudioContext();
+    if (!actx) return;
+    const bufferSize = actx.sampleRate * 0.15; // 150ms burst
+    const buffer = actx.createBuffer(1, bufferSize, actx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (actx.sampleRate * 0.03));
+    }
+    const noise = actx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = actx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 1200;
+    const gain = actx.createGain();
+    gain.gain.setValueAtTime(0.8, actx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.15);
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(actx.destination);
+    noise.start();
+  } catch (e) {
+    // ignore
+  }
+}
+
+function playCrackSound() {
+  if (!soundEnabled) return;
+  getAudioContext();
+  if (loadedAudios.length > 0) {
+    const choice = loadedAudios[Math.floor(Math.random() * loadedAudios.length)];
+    const playPromise = choice.cloneNode().play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        playSynthesizedCrack();
+      });
+    }
+  } else {
+    playSynthesizedCrack();
+  }
+}
+
+// ── Particle Sparks ──────────────────────────────────────────────────────────
+function createSparks(x, y) {
+  const count = 16;
+  for (let i = 0; i < count; i++) {
+    const ang = Math.random() * Math.PI * 2;
+    const spd = 4 + Math.random() * 10;
+    sparks.push({
+      x,
+      y,
+      vx: Math.cos(ang) * spd,
+      vy: Math.sin(ang) * spd,
+      life: 1.0,
+      decay: 0.04 + Math.random() * 0.04,
+      size: 2.5 + Math.random() * 3,
+      color: Math.random() > 0.3 ? '#ffe066' : '#ffffff'
+    });
+  }
+  // Visual flash
+  flashEl.style.opacity = '1';
+  setTimeout(() => { flashEl.style.opacity = '0'; }, 100);
+}
+
+// ── Whip Creation & Math ─────────────────────────────────────────────────────
+function spawnWhip(mx, my) {
+  dropping = false;
+  lastCrackTime = 0;
+  whipSpawnTime = Date.now();
+  const pts = [];
+  for (let i = 0; i < P.segments; i++) {
+    const t = i / (P.segments - 1);
+    const x = mx + t * P.arcWidth;
+    const y = my - Math.sin(t * Math.PI * 0.75) * P.arcHeight;
+    pts.push({ x, y, px: x, py: y });
+  }
+  return pts;
+}
+
+function segLen(i) {
+  const t = i / (P.segments - 1);
+  return P.segmentLength * (1 - t * (1 - P.taper));
+}
+
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+
+function catmullPoint(pts, i) {
+  const n = pts.length;
+  if (n === 0) return { x: 0, y: 0 };
+  if (i < 0) {
+    if (n >= 2) return { x: 2 * pts[0].x - pts[1].x, y: 2 * pts[0].y - pts[1].y };
+    return { x: pts[0].x, y: pts[0].y };
+  }
+  if (i >= n) {
+    if (n >= 2) {
+      const a = pts[n - 2], b = pts[n - 1];
+      return { x: 2 * b.x - a.x, y: 2 * b.y - a.y };
+    }
+    return { x: pts[n - 1].x, y: pts[n - 1].y };
+  }
+  return pts[i];
+}
+
+function whipSegmentBezier(pts, i) {
+  const p0 = catmullPoint(pts, i - 1);
+  const p1 = pts[i];
+  const p2 = pts[i + 1];
+  const p3 = catmullPoint(pts, i + 2);
+  return {
+    cp1x: p1.x + (p2.x - p0.x) / 6,
+    cp1y: p1.y + (p2.y - p0.y) / 6,
+    cp2x: p2.x - (p3.x - p1.x) / 6,
+    cp2y: p2.y - (p3.y - p1.y) / 6,
+    x2: p2.x,
+    y2: p2.y,
+  };
+}
+
+const wrapPi = a => {
+  while (a > Math.PI) a -= Math.PI * 2;
+  while (a < -Math.PI) a += Math.PI * 2;
+  return a;
+};
+
+// ── Physics Updates ──────────────────────────────────────────────────────────
+function updateHandleAim() {
+  if (dropping) return;
+  const mvx = mouseX - prevMouseX;
+  const mvy = mouseY - prevMouseY;
+  const delta = clamp(
+    mvx * P.handleAimByMouseX + mvy * P.handleAimByMouseY,
+    -P.handleAimClamp,
+    P.handleAimClamp
+  );
+  const target = P.baseTargetAngle + delta;
+  const err = wrapPi(target - handleAngle);
+  handleAngVel += err * P.handleSpring;
+  handleAngVel *= P.handleAngularDamping;
+  handleAngle = wrapPi(handleAngle + handleAngVel);
+}
+
+function applyBasePose() {
+  if (!whip || dropping) return;
+  const dx = Math.cos(handleAngle);
+  const dy = Math.sin(handleAngle);
+  const guided = Math.min(P.basePoseSegments, whip.length - 1);
+  for (let i = 1; i <= guided; i++) {
+    const t = (i - 1) / Math.max(guided - 1, 1);
+    const stiff = lerp(P.basePoseStiffStart, P.basePoseStiffEnd, t);
+    const prev = whip[i - 1];
+    const p = whip[i];
+    const targetLen = segLen(i - 1);
+    const tx = prev.x + dx * targetLen;
+    const ty = prev.y + dy * targetLen;
+    p.x = lerp(p.x, tx, stiff);
+    p.y = lerp(p.y, ty, stiff);
+  }
+}
+
+function applyBendLimits() {
+  if (!whip || whip.length < 3) return;
+  for (let i = 1; i < whip.length - 1; i++) {
+    const a = whip[i - 1];
+    const b = whip[i];
+    const c = whip[i + 1];
+
+    const v1x = a.x - b.x;
+    const v1y = a.y - b.y;
+    const v2x = c.x - b.x;
+    const v2y = c.y - b.y;
+    const l1 = Math.hypot(v1x, v1y) || 0.0001;
+    const l2 = Math.hypot(v2x, v2y) || 0.0001;
+    const n1x = v1x / l1, n1y = v1y / l1;
+    const n2x = v2x / l2, n2y = v2y / l2;
+
+    const dot = clamp(n1x * n2x + n1y * n2y, -1, 1);
+    const angle = Math.acos(dot);
+    const t = i / (whip.length - 2);
+    const maxBend = lerp(P.handleMaxBendDeg, P.tipMaxBendDeg, t) * Math.PI / 180;
+    const bend = Math.PI - angle;
+    if (bend <= maxBend) continue;
+
+    const cross = n1x * n2y - n1y * n2x;
+    const sign = cross >= 0 ? 1 : -1;
+    const targetAngle = Math.PI - maxBend;
+    const targetA = Math.atan2(n1y, n1x) + sign * targetAngle;
+    const tx = b.x + Math.cos(targetA) * l2;
+    const ty = b.y + Math.sin(targetA) * l2;
+    const rigidity = lerp(P.bendRigidityStart, P.bendRigidityEnd, t);
+
+    c.x = lerp(c.x, tx, rigidity);
+    c.y = lerp(c.y, ty, rigidity);
+  }
+}
+
+function capSegmentStretch() {
+  if (!whip || whip.length < 2) return;
+  for (let i = 0; i < whip.length - 1; i++) {
+    const a = whip[i];
+    const b = whip[i + 1];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const dist = Math.hypot(dx, dy) || 0.0001;
+    const maxLen = segLen(i) * P.maxStretchRatio;
+    if (dist <= maxLen) continue;
+    const k = maxLen / dist;
+    b.x = a.x + dx * k;
+    b.y = a.y + dy * k;
+  }
+}
+
+function applyWallCollisions() {
+  if (!whip || dropping) return;
+  const start = 1;
+  for (let i = start; i < whip.length; i++) {
+    const p = whip[i];
+    let vx = p.x - p.px;
+    let vy = p.y - p.py;
+    let hit = false;
+
+    if (p.x < 0) {
+      p.x = 0;
+      if (vx < 0) vx = -vx * P.wallBounce;
+      vy *= P.wallFriction;
+      hit = true;
+    } else if (p.x > W) {
+      p.x = W;
+      if (vx > 0) vx = -vx * P.wallBounce;
+      vy *= P.wallFriction;
+      hit = true;
+    }
+    if (p.y < 0) {
+      p.y = 0;
+      vx *= P.wallFriction;
+      if (vy < 0) vy = -vy * P.wallBounce;
+      hit = true;
+    } else if (p.y > H) {
+      p.y = H;
+      vx *= P.wallFriction;
+      if (vy > 0) vy = -vy * P.wallBounce;
+      hit = true;
+    }
+
+    if (hit) {
+      p.px = p.x - vx;
+      p.py = p.y - vy;
+    }
+  }
+}
+
+function update() {
+  // Update spark particles
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.x += s.vx;
+    s.y += s.vy;
+    s.vy += 0.25;
+    s.life -= s.decay;
+    if (s.life <= 0) sparks.splice(i, 1);
+  }
+
+  if (!whip) return;
+
+  const g = dropping ? P.dropGravity : P.gravity;
+  updateHandleAim();
+
+  // Verlet integration
+  const start = dropping ? 0 : 1;
+  for (let i = start; i < whip.length; i++) {
+    const p = whip[i];
+    const vx = (p.x - p.px) * P.damping;
+    const vy = (p.y - p.py) * P.damping;
+    p.px = p.x;
+    p.py = p.y;
+    p.x += vx;
+    p.y += vy + g;
+  }
+
+  // Pin handle to mouse
+  if (!dropping) {
+    whip[0].x = mouseX;
+    whip[0].y = mouseY;
+    whip[0].px = mouseX;
+    whip[0].py = mouseY;
+  }
+
+  capSegmentStretch();
+  applyWallCollisions();
+  applyBasePose();
+
+  for (let iter = 0; iter < P.constraintIters; iter++) {
+    for (let i = 0; i < whip.length - 1; i++) {
+      const a = whip[i], b = whip[i + 1];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+      const target = segLen(i);
+      const diff = (dist - target) / dist * 0.5;
+      const ox = dx * diff, oy = dy * diff;
+      if (i === 0 && !dropping) {
+        b.x -= ox * 2;
+        b.y -= oy * 2;
+      } else {
+        a.x += ox; a.y += oy;
+        b.x -= ox; b.y -= oy;
+      }
+    }
+    applyBendLimits();
+    if (!dropping) applyBasePose();
+    capSegmentStretch();
+    applyWallCollisions();
+  }
+
+  // Tip velocity for crack detection
+  const tip = whip[whip.length - 1];
+  const tipVel = Math.hypot(tip.x - tip.px, tip.y - tip.py);
+
+  // Update HUD
+  statVelEl.textContent = Math.round(tipVel);
+  speedLabelEl.textContent = `${Math.round(tipVel)} / ${P.crackSpeed} px`;
+  const pct = Math.min(100, (tipVel / 500) * 100);
+  speedFillEl.style.width = `${pct}%`;
+
+  if (!dropping && tipVel > P.crackSpeed) {
+    const now = Date.now();
+    if (now - whipSpawnTime >= P.firstCrackGraceMs && now - lastCrackTime > P.crackCooldownMs) {
+      lastCrackTime = now;
+      crackCount++;
+      statCracksEl.textContent = crackCount;
+      playCrackSound();
+      createSparks(tip.x, tip.y);
+    }
+  }
+
+  // Drop cleanup: auto re-spawn when fallen off
+  if (dropping && whip.every(p => p.y > H + 60)) {
+    whip = spawnWhip(mouseX || W / 2, mouseY || H / 2);
+    dropping = false;
+  }
+
+  prevMouseX = mouseX;
+  prevMouseY = mouseY;
+}
+
+// ── Rendering ────────────────────────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw spark particles
+  for (const s of sparks) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, s.life);
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  if (!whip) return;
+
+  // White outline / halo
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#ffffff';
+  if (whip.length >= 2) {
+    ctx.beginPath();
+    ctx.moveTo(whip[0].x, whip[0].y);
+    for (let i = 0; i < whip.length - 1; i++) {
+      const { cp1x, cp1y, cp2x, cp2y, x2, y2 } = whipSegmentBezier(whip, i);
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x2, y2);
+    }
+    ctx.lineWidth = P.lineWidthTip + P.outlineWidth * 2;
+    ctx.stroke();
+
+    const thickLinks = Math.min(P.handleThickSegments, whip.length - 1);
+    if (thickLinks > 0 && P.handleExtraWidth > 0) {
+      ctx.beginPath();
+      ctx.moveTo(whip[0].x, whip[0].y);
+      for (let i = 0; i < thickLinks; i++) {
+        const { cp1x, cp1y, cp2x, cp2y, x2, y2 } = whipSegmentBezier(whip, i);
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x2, y2);
+      }
+      ctx.lineWidth = P.lineWidthHandle + P.handleExtraWidth + P.outlineWidth * 2;
+      ctx.stroke();
+    }
+  }
+
+  // Core black stroke
+  ctx.strokeStyle = '#111111';
+  for (let i = 0; i < whip.length - 1; i++) {
+    const t = i / Math.max(1, whip.length - 2);
+    const extra = i < P.handleThickSegments ? P.handleExtraWidth : 0;
+    ctx.lineWidth = lerp(P.lineWidthHandle, P.lineWidthTip, t) + extra;
+    const { cp1x, cp1y, cp2x, cp2y, x2, y2 } = whipSegmentBezier(whip, i);
+    ctx.beginPath();
+    ctx.moveTo(whip[i].x, whip[i].y);
+    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x2, y2);
+    ctx.stroke();
+  }
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ── Event Handlers ───────────────────────────────────────────────────────────
+window.addEventListener('mousemove', e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+window.addEventListener('touchmove', e => {
+  if (e.touches.length > 0) {
+    mouseX = e.touches[0].clientX;
+    mouseY = e.touches[0].clientY;
+  }
+}, { passive: true });
+
+canvas.addEventListener('mousedown', e => {
+  // Click canvas drops the whip
+  if (whip && !dropping) dropping = true;
+});
+
+thresholdSlider.addEventListener('input', e => {
+  const val = parseInt(e.target.value, 10);
+  P.crackSpeed = val;
+  crackThresholdVal.textContent = `${val} px/frame`;
+  const pct = Math.min(100, (val / 500) * 100);
+  thresholdMarkEl.style.left = `${pct}%`;
+});
+
+btnSound.addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  btnSound.textContent = soundEnabled ? '🔊 Suara: ON' : '🔇 Suara: OFF';
+  if (soundEnabled) getAudioContext();
+});
+
+btnSpawn.addEventListener('click', () => {
+  whip = spawnWhip(mouseX || W / 2, mouseY || H / 2);
+  dropping = false;
+  handleAngle = P.baseTargetAngle;
+  handleAngVel = 0;
+});
+
+// Initialize on load
+whip = spawnWhip(W / 2, H / 2);
+loop();
+</script>
+</body>
+</html>

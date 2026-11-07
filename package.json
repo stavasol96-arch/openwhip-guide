@@ -1,0 +1,25 @@
+{
+  "name": "pecut-ai-simulator",
+  "version": "1.0.0",
+  "description": "Simulator Pecut AI (OpenWhip Safe Simulator) - Efek pecutan realistis dengan suara & visual tanpa interaksi keyboard atau macro teks yang merusak sesi AI.",
+  "main": "main.js",
+  "scripts": {
+    "postinstall": "node scripts/ensure-electron.js",
+    "start": "node scripts/start-electron.js",
+    "dev": "node scripts/start-electron.js",
+    "web": "node server.js"
+  },
+  "keywords": [
+    "pecut-ai",
+    "openwhip",
+    "simulator",
+    "canvas-physics",
+    "whip-effect",
+    "safe-simulator"
+  ],
+  "author": "Ebil-bot",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
